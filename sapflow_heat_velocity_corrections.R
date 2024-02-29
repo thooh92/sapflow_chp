@@ -1,0 +1,63 @@
+## Author: Thomas Ohnemus
+## Date: 29/02/2024
+## Correction of heat velocity data
+
+rm(list = ls())
+
+library(data.table)
+library(tidyverse)
+library(suncalc)
+
+# Read measured variables
+parameters        <- read.csv2("C:/Docs/MIRO/Baumparameter.csv")
+parameters$sheet  <- paste0(parameters$Tree, ".csv")
+p                 <- parameters[parameters$Tree == unique(parameters$Tree)[1],]
+
+# Get Data
+dat               <- read.csv(paste0("C:/Docs/MIRO/Saftfluss/data/",p$sheet))
+dat$Time          <- as.POSIXct(dat$Time, "%Y-%m-%d %H:%M:%S")
+
+# Background Calculations
+source("C:/Docs/MIRO/Saftfluss/Sapflow_Background.R")
+
+    # To Do: Find Diagnostics to clean outliers with in Sapflow_Background.R
+dat_l <- pivot_longer(dat, cols = 2:22, names_to = "variable", values_to = "value")
+dat_l$value[dat_l$value > 100] <- NA
+ggplot(dat_l[dat_l$variable %like% "Tds" | dat_l$variable %like% "SWC",], 
+       aes(x = Time, y = value)) + geom_line() +
+  theme_bw() + facet_wrap(~variable, scales = "free", ncol = 1) +
+  geom_vline(xintercept = as.POSIXct("2024-02-24 01:43:44", tz = "UTC"), color = "steelblue") +
+  geom_vline(xintercept = as.POSIXct("2024-02-24 05:43:42", tz = "UTC"), color = "steelblue") +
+  geom_vline(xintercept = as.POSIXct("2024-02-25 22:13:48", tz = "UTC"), color = "steelblue") 
+ggsave("C:/Docs/MIRO/Saftfluss/Frost.png", dpi = 300, width = 10, height = 15, units = "cm")
+
+dat_l$Time[dat_l$variable == "SF.01.TdsOuter..degC." & dat_l$value < 0]
+  # SWC > 100 = wrong
+    # Reasons: either distance between probes or density of dry wood wrongly estimated
+
+    # To Do: Data gap 23rd of February early morning? (SWC)
+
+# Identify and correct probe misalignment
+  # Assign sunset and sunrise times
+sunriset        <- getSunlightTimes(date = as.Date(mis_df$time), lat = p$Lat, lon = p$Lon, 
+                                    keep = c("sunrise", "sunset"), tz = "UTC")[4:5]
+    # To Do: Timezone sapflow?
+mis_df             <- cbind(mis_df, sunriset)
+rm(sunriset)
+
+# Assign night and daytime
+mis_df$period      <- ifelse(mis_df$time < mis_df$sunrise | mis_df$time > mis_df$sunset, "night", "day")
+mis_df$Date        <- as.Date(mis_df$time)
+
+# Subset to night times & assign one date to each night
+mis_df             <- mis_df[mis_df$period == "night",]
+mis_df$night       <- as.Date(ifelse(mis_df$time < mis_df$sunrise, mis_df$Date-1, mis_df$Date))
+
+# Group by night
+df_nightly         <- mis_df %>% group_by(night, position) %>%
+  summarize(hv_mean = mean(value, na.rm = T))
+
+ggplot(df_nightly, aes(x = night, y = hv_mean, color = position)) + geom_point() +
+  theme_bw() + geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(x = "Night beginning ...", y = "Mean Heat Velocity [cm/hr]")
+
