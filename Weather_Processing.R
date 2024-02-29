@@ -17,7 +17,7 @@ setwd("C:/Docs/MIRO/sapflow_CHP/data_raw/")
 files <- list.files(pattern = ".csv")
 
   # Load coordinates
-parameters        <- read.csv2("C:/Docs/MIRO/Baumparameter.csv")
+parameters        <- read.csv2("../Baumparameter.csv")
 parameters        <- parameters[1,]
 
   # Data Wrangling
