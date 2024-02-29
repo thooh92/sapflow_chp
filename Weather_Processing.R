@@ -2,11 +2,15 @@
 ## Date: 28/02/2024
 ## Process weather data to find nights with no evaporative demand
 
+# Initialize Script
 rm(list = ls())
 
 library(data.table)
 library(tidyverse)
 library(suncalc)
+
+# Load Functions
+source("C:/Docs/MIRO/sapflow_CHP/sapflow_chp/VPD_functions.R")
 
 # Load Data
 setwd("C:/Docs/MIRO/sapflow_CHP/data_raw/")
@@ -24,8 +28,8 @@ dat     <- dat[,c(8,3,4,5,7)]
 dat$Windgeschwindigkeit <- dat$Windgeschwindigkeit/3.6  # transform from km/h to m/s
 
   # save first level data
-setwd("C:/Docs/MIRO/sapflow_CHP/data_1st_lvl")
-write.csv(dat, "LA_weather.csv")
+setwd("C:/Docs/MIRO/sapflow_CHP/")
+write.csv(dat, "data_1st_lvl/LA_weather.csv")
 
 # Assign sunset and sunrise times
     # To Do: automatize lat & lon
@@ -52,9 +56,10 @@ dat_nightly     <- dat %>% group_by(night) %>% summarize(mean_w = mean(Windgesch
                                                          min_rh = min(Relative.Luftfeuchtigkeit, na.rm = T),
                                                          max_rh = max(Relative.Luftfeuchtigkeit, na.rm = T)) 
 
-# Calculate VPD
+# Calculate VPD & save data
 dat_nightly <- dat_nightly %>% mutate(vpd_allen = allen.vpd(tmax = max_t, tmin = min_t, rhmin = min_rh, rhmax = max_rh),
                                       vpd_maes = maes.vpd(t = mean_t, RH = mean_rh))
+write.csv(dat_nightly, "data_1st_lvl/LA_weather_nightly.csv")
 
 # Plot VPD & Wind Speed per night
 dat_nightly <- pivot_longer(dat_nightly, cols = 9:10, names_to = "VPD", values_to = "value")
@@ -62,5 +67,5 @@ ggplot(dat_nightly, aes(x = night, y = value, colour = VPD)) +
   geom_point(alpha = 0.5) + theme_bw() + geom_hline(yintercept = 0, linetype = "dashed") +
   labs(y = "Vapour Pressure Deficit [kPa]\nMean Wind Speed [m/s]", x = "Night beginning ...") +
   geom_point(aes(y = mean_w), shape = "diamond", color = "black")
-ggsave("C:/Docs/MIRO/weather/Nocturnal_VPD.png", units = "cm", dpi = 300, width = 14, height = 10)
+ggsave("C:/Docs/MIRO/sapflow_CHP/plots/Nocturnal_VPD.png", units = "cm", dpi = 300, width = 14, height = 10)
 
