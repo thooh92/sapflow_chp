@@ -18,12 +18,12 @@ p                 <- parameters[parameters$Tree == unique(parameters$Tree)[1],]
 dat               <- read.csv(paste0("data_raw/",p$sheet))
 dat$Time          <- as.POSIXct(dat$Time, "%Y-%m-%d %H:%M:%S", tz = "UTC")
 
+# Background Calculations
+source("sapflow_chp/Sapflow_functions.R")
+
 # Get weather data
 weather           <- read.csv("data_1st_lvl/LA_weather.csv")
 weather$UTC       <- as.POSIXct(weather$UTC, format = "%Y-%m-%d %H:%M:%S", tz = "UTC")
-
-# Background Calculations
-source("sapflow_chp/Sapflow_functions.R")
 
     # To Do: Find Diagnostics to identify flaws in data
 dat_l <- pivot_longer(dat, cols = 2:22, names_to = "variable", values_to = "value")
@@ -41,10 +41,22 @@ ggsave("plots/Frost_100_ambT.png", dpi = 300, width = 14, height = 15, units = "
 
   # 1st Correction: Remove data where ambient temperature is below 0
 neg_T <- weather$UTC[weather$Temperatur < 0]
-dat_l$Time[which.min(neg_T[2])]
+neg_T <- neg_T[!is.na(neg_T)]
 
+rmv_indices <- c()
+for(i in 1:length(neg_T)){
+  inds <- which(abs(dat_l$Time - neg_T[i]) == min(abs(dat_l$Time - neg_T[i]), na.rm = T))
+  rmv_indices <- c(rmv_indices, inds)
+}
+
+dat_cleaned  <- dat_l
+dat_cleaned$value[unique(rmv_indices)] <- NA
+
+ggplot(dat_cleaned, aes(x = Time, y = value)) + geom_line() +
+  theme_bw() + facet_wrap(~variable, scales = "free")
 
     # To Do: Data gap 23rd of February early morning? (SWC)
+
 
 # Identify and correct probe misalignment
   # Assign sunset and sunrise times
