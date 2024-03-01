@@ -35,14 +35,6 @@ Tmax_inner             <- (n_dist_d_inner^2)/(4*therm_diffusivity)
 peclet_outer           <- 0.9696*Tmax_outer-3.2363
 peclet_inner           <- 0.9696*Tmax_inner-3.2363
 
-#########
-peclet_outer[which(DMA_outer > 50)]
-Tmax_outer[which(DMA_outer > 50)]
-HRM_outer[which(DMA_outer > 50)]
-TMx_outer[which(DMA_outer > 50)]
-DMA_outer[which(DMA_outer > 5)]
-dat$SF.01.tMaxTouter..s.[which(DMA_outer > 50)]
-#########
 
 # Heat Velocity Calculations
 HRM_outer <- (((2*therm_diffusivity)/(n_dist_d_outer+n_dist_u_outer))*dat$SF.01.AlphaOuter...+

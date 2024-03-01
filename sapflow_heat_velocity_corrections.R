@@ -115,8 +115,27 @@ ggsave("plots/Nocturnal_VPD_Sapflow.png", units = "cm", dpi = 300,
        width = 20, height = 10)
 
 # Plot Sap Flow from DMA Heat Velocity
+# Sap Flux Density
+heartwood_area         <- ifelse(p$sapwood_depth < 1.51, pi*((p$stem_diameter/2)-p$bark_depth-p$sapwood_depth)^2,
+                                 pi*((p$stem_diameter/2)-p$bark_depth-2)^2)  #cm²
+sapwood_area_inner     <- ifelse(p$sapwood_depth < 1.51, 0,
+                                 pi*((p$stem_diameter/2)-p$bark_depth-1)^2-heartwood_area)  #cm²
+sapwood_area_outer     <- pi*((p$stem_diameter/2)-p$bark_depth)^2-heartwood_area-sapwood_area_inner  #cm²
+
+sf_dense_outer <- (DMA_outer*sapwood_dry_density*(heat_cap_wood+(sapwood_g_watercontent*heat_cap_sap)))/
+  (density_water*heat_cap_sap)
+sf_dense_inner <- (DMA_inner*sapwood_dry_density*(heat_cap_wood+(sapwood_g_watercontent*heat_cap_sap)))/
+  (density_water*heat_cap_sap)
+
+# Sap Flow Total
+dat$sf_tot  <- ((sf_dense_outer*sapwood_area_outer)+(sf_dense_inner*sapwood_area_inner))/1000
 
 
+ggplot(dat, aes(x = Time, y = sf_tot)) + geom_line(alpha = 0.5) +
+  theme_bw() + labs(x = "", y = "Total Sap Flow [l/h]", title = parameters$Tree[1]) +
+  geom_hline(yintercept = 0, linetype = "dashed")
+ggsave("plots/Sapflow.png", units = "cm", dpi = 300,
+       width = 10, height = 10)
 
 
 
