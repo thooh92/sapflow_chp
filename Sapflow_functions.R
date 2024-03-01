@@ -35,7 +35,14 @@ Tmax_inner             <- (n_dist_d_inner^2)/(4*therm_diffusivity)
 peclet_outer           <- 0.9696*Tmax_outer-3.2363
 peclet_inner           <- 0.9696*Tmax_inner-3.2363
 
-
+#########
+peclet_outer[which(DMA_outer > 50)]
+Tmax_outer[which(DMA_outer > 50)]
+HRM_outer[which(DMA_outer > 50)]
+TMx_outer[which(DMA_outer > 50)]
+DMA_outer[which(DMA_outer > 5)]
+dat$SF.01.tMaxTouter..s.[which(DMA_outer > 50)]
+#########
 
 # Heat Velocity Calculations
 HRM_outer <- (((2*therm_diffusivity)/(n_dist_d_outer+n_dist_u_outer))*dat$SF.01.AlphaOuter...+
@@ -46,8 +53,8 @@ TMx_outer <- ((sqrt(((4*therm_diffusivity)/3)*(log(1-(3/dat$SF.01.tMaxTouter..s.
                       ((n_dist_d_outer^2)/(dat$SF.01.tMaxTouter..s.*(dat$SF.01.tMaxTouter..s.-3)))))*3600)*wound_correction
 TMx_inner <- ((sqrt(((4*therm_diffusivity)/3)*(log(1-(3/dat$SF.01.tMaxTinner..s.)))+
                       ((n_dist_d_inner^2)/(dat$SF.01.tMaxTinner..s.*(dat$SF.01.tMaxTinner..s.-3)))))*3600)*wound_correction
-DMA_outer <- ifelse(dat$SF.01.tMaxTouter..s. < peclet_outer, dat$SF.01.tMaxTouter..s., HRM_outer)
-DMA_inner <- ifelse(dat$SF.01.tMaxTinner..s. < peclet_inner, dat$SF.01.tMaxTinner..s., HRM_inner)
+DMA_outer <- ifelse(dat$SF.01.tMaxTouter..s. < 0.9*peclet_outer, dat$SF.01.tMaxTouter..s., HRM_outer)
+DMA_inner <- ifelse(dat$SF.01.tMaxTinner..s. < 0.9*peclet_inner, dat$SF.01.tMaxTinner..s., HRM_inner)
 
 # Check probe misalignment
 mis_df <- data.frame(

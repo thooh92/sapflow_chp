@@ -45,7 +45,7 @@ neg_T <- neg_T[!is.na(neg_T)]
 
 rmv_indices <- c()
 for(i in 1:length(neg_T)){
-  inds <- which(abs(difftime(dat_l$Time, neg_T[i], units = "mins")) < 30)
+  inds <- which(abs(difftime(dat_l$Time, neg_T[i], units = "mins")) < 60)
   rmv_indices <- c(rmv_indices, inds)
 }
 
@@ -63,14 +63,10 @@ dat_cleaned_w <- pivot_wider(dat_cleaned,
 dat           <- dat_cleaned_w
 
 source("sapflow_chp/Sapflow_functions.R")
-ggsave("plots/DMA_HV_cleaned.png", units = "cm", dpi = 300,
+ggsave("plots/DMA_HV_peclet_cleaned.png", units = "cm", dpi = 300,
        width = 14, height = 10)
 
-    # To Do: Data gap 23rd of February early morning? (SWC)
 
-
-
-#####################
 # Correct Probe Misalignment
 # Identify and correct probe misalignment
   # Assign sunset and sunrise times
@@ -89,10 +85,20 @@ mis_df             <- mis_df[mis_df$period == "night",]
 mis_df$night       <- as.Date(ifelse(mis_df$time < mis_df$sunrise, mis_df$Date-1, mis_df$Date))
 
 # Group by night
-df_nightly         <- mis_df %>% group_by(night, position) %>%
-  summarize(hv_mean = mean(value, na.rm = T))
+df_nightly         <- mis_df[!is.na(mis_df$value),] %>% group_by(night, position) %>%
+  summarize(hv_mean = mean(value, na.rm = T),
+            hv_sd = sd(value, na.rm = T),
+            count = n())
 
-ggplot(df_nightly, aes(x = night, y = hv_mean, color = position)) + geom_point() +
+ggplot(df_nightly[df_nightly$count >= 12,], aes(x = night, y = hv_mean, color = position)) + geom_point() +
   theme_bw() + geom_hline(yintercept = 0, linetype = "dashed") +
-  labs(x = "Night beginning ...", y = "Mean Heat Velocity [cm/hr]")
+  labs(x = "Night beginning ...", y = "Mean Heat Velocity [cm/hr]") +
+  geom_errorbar(aes(ymin = hv_mean - hv_sd, 
+                ymax = hv_mean + hv_sd), width = 0.1) 
+ggsave("plots/Nocturnal_HV_6h.png", dpi = 300, units = "cm",
+       width = 14, height = 10)
+
+
+
+
 
