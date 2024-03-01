@@ -99,6 +99,24 @@ ggsave("plots/Nocturnal_HV_6h.png", dpi = 300, units = "cm",
        width = 14, height = 10)
 
 
+# Load nocturnal VPD data
+weather_n    <- read.csv("data_1st_lvl/LA_weather_nightly.csv")
+weather_n$night <- as.Date(weather_n$night)
+
+VPD_sapflow  <- full_join(weather_n, df_nightly[df_nightly$count >= 12,])
+VPD_sapflow  <- pivot_longer(VPD_sapflow, cols = c(3,10,11),
+                             values_to = "value", names_to = "factors")
+
+ggplot(VPD_sapflow, aes(x = value, y = hv_mean, color = position)) +
+  theme_bw() + geom_point() + facet_wrap(~factors, scales = "free") +
+  labs(x = "Nocturnal VPD [kPa]\nMean Nocturnal Wind Speed [m/s]", y = "Mean Heat Velocity [cm/hr]") +
+  geom_smooth(method = "lm", se = F, linewidth = 0.1)
+ggsave("plots/Nocturnal_VPD_Sapflow.png", units = "cm", dpi = 300,
+       width = 20, height = 10)
+
+# Plot Sap Flow from DMA Heat Velocity
+
+
 
 
 
