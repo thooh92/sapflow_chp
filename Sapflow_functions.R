@@ -57,7 +57,7 @@ mis_df <- data.frame(
 )
 mis_df <- pivot_longer(mis_df, cols = 2:3, names_to = "position", values_to = "value")
 
-ggplot(mis_df, aes(x = time, y = value, color = position)) +
+print(ggplot(mis_df, aes(x = time, y = value, color = position)) +
   geom_line() + theme_bw() +
   labs(x = "", y = "Heat Velocity [cm/hr]", colour = "") + 
-  geom_hline(yintercept = 0, linetype = "dashed")
+  geom_hline(yintercept = 0, linetype = "dashed"))

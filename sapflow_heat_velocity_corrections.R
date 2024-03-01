@@ -37,7 +37,7 @@ ggplot(dat_l[dat_l$variable %like% "Tds" | dat_l$variable %like% "SWC",],
   geom_vline(xintercept = as.POSIXct("2024-02-25 20:00:00", tz = "UTC"), color = "red") +
   geom_line(data = weather, aes(x = UTC, y = Temperatur), colour = "coral")
   
-ggsave("plots/Frost_100_ambT.png", dpi = 300, width = 14, height = 15, units = "cm")
+#ggsave("plots/Frost_100_ambT.png", dpi = 300, width = 14, height = 15, units = "cm")
 
   # 1st Correction: Remove data where ambient temperature is below 0
 neg_T <- weather$UTC[weather$Temperatur < 0]
@@ -45,7 +45,7 @@ neg_T <- neg_T[!is.na(neg_T)]
 
 rmv_indices <- c()
 for(i in 1:length(neg_T)){
-  inds <- which(abs(dat_l$Time - neg_T[i]) == min(abs(dat_l$Time - neg_T[i]), na.rm = T))
+  inds <- which(abs(difftime(dat_l$Time, neg_T[i], units = "mins")) < 30)
   rmv_indices <- c(rmv_indices, inds)
 }
 
@@ -55,9 +55,23 @@ dat_cleaned$value[unique(rmv_indices)] <- NA
 ggplot(dat_cleaned, aes(x = Time, y = value)) + geom_line() +
   theme_bw() + facet_wrap(~variable, scales = "free")
 
+
+# Plot DMA Heat Velocity to identify periods with odd data
+dat_cleaned_w <- pivot_wider(dat_cleaned, 
+                             names_from = "variable",
+                             values_from = "value")
+dat           <- dat_cleaned_w
+
+source("sapflow_chp/Sapflow_functions.R")
+ggsave("plots/DMA_HV_cleaned.png", units = "cm", dpi = 300,
+       width = 14, height = 10)
+
     # To Do: Data gap 23rd of February early morning? (SWC)
 
 
+
+#####################
+# Correct Probe Misalignment
 # Identify and correct probe misalignment
   # Assign sunset and sunrise times
 sunriset        <- getSunlightTimes(date = as.Date(mis_df$time), lat = p$Lat, lon = p$Lon, 
