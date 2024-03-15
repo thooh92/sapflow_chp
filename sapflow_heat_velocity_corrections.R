@@ -9,10 +9,11 @@ library(tidyverse)
 library(suncalc)
 
 setwd("C:/Docs/MIRO/sapflow_CHP/")
+
 # Read measured variables
 parameters        <- read.csv2("Baumparameter.csv")
 parameters$sheet  <- paste0(parameters$Tree, ".csv")
-p                 <- parameters[parameters$Tree == unique(parameters$Tree)[1],]
+p                 <- parameters[parameters$Tree == unique(parameters$Tree)[2],]
 
 # Get Sapflow data
 dat               <- read.csv(paste0("data_raw/",p$sheet))
@@ -31,10 +32,6 @@ dat_l$value[dat_l$value > 100] <- NA
 ggplot(dat_l[dat_l$variable %like% "Tds" | dat_l$variable %like% "SWC",], 
        aes(x = Time, y = value)) + geom_line() +
   theme_bw() + facet_wrap(~variable, scales = "free", ncol = 1) +
-  geom_vline(xintercept = as.POSIXct("2024-02-24 01:43:44", tz = "UTC"), color = "steelblue") +
-  geom_vline(xintercept = as.POSIXct("2024-02-24 05:43:42", tz = "UTC"), color = "steelblue") +
-  geom_vline(xintercept = as.POSIXct("2024-02-25 22:13:48", tz = "UTC"), color = "steelblue") +
-  geom_vline(xintercept = as.POSIXct("2024-02-25 20:00:00", tz = "UTC"), color = "red") +
   geom_line(data = weather, aes(x = UTC, y = Temperatur), colour = "coral")
   
 #ggsave("plots/Frost_100_ambT.png", dpi = 300, width = 14, height = 15, units = "cm")
@@ -63,7 +60,7 @@ dat_cleaned_w <- pivot_wider(dat_cleaned,
 dat           <- dat_cleaned_w
 
 source("sapflow_chp/Sapflow_functions.R")
-ggsave("plots/DMA_HV_peclet_cleaned.png", units = "cm", dpi = 300,
+ggsave(paste0("plots/",p$Tree,"_DMA_HV_peclet_cleaned.png"), units = "cm", dpi = 300,
        width = 14, height = 10)
 
 
@@ -95,7 +92,7 @@ ggplot(df_nightly[df_nightly$count >= 12,], aes(x = night, y = hv_mean, color = 
   labs(x = "Night beginning ...", y = "Mean Heat Velocity [cm/hr]") +
   geom_errorbar(aes(ymin = hv_mean - hv_sd, 
                 ymax = hv_mean + hv_sd), width = 0.1) 
-ggsave("plots/Nocturnal_HV_6h.png", dpi = 300, units = "cm",
+ggsave(paste0("plots/",p$Tree,"_Nocturnal_HV_6h.png"), dpi = 300, units = "cm",
        width = 14, height = 10)
 
 
@@ -111,7 +108,7 @@ ggplot(VPD_sapflow, aes(x = value, y = hv_mean, color = position)) +
   theme_bw() + geom_point() + facet_wrap(~factors, scales = "free") +
   labs(x = "Nocturnal VPD [kPa]\nMean Nocturnal Wind Speed [m/s]", y = "Mean Heat Velocity [cm/hr]") +
   geom_smooth(method = "lm", se = F, linewidth = 0.1)
-ggsave("plots/Nocturnal_VPD_Sapflow.png", units = "cm", dpi = 300,
+ggsave(paste0("plots/",p$Tree,"_Nocturnal_VPD_Sapflow.png"), units = "cm", dpi = 300,
        width = 20, height = 10)
 
 # Plot Sap Flow from DMA Heat Velocity
@@ -122,9 +119,9 @@ sapwood_area_inner     <- ifelse(p$sapwood_depth < 1.51, 0,
                                  pi*((p$stem_diameter/2)-p$bark_depth-1)^2-heartwood_area)  #cm²
 sapwood_area_outer     <- pi*((p$stem_diameter/2)-p$bark_depth)^2-heartwood_area-sapwood_area_inner  #cm²
 
-sf_dense_outer <- (DMA_outer*sapwood_dry_density*(heat_cap_wood+(sapwood_g_watercontent*heat_cap_sap)))/
+sf_dense_outer <- (as.numeric(DMA_outer[[1]])*sapwood_dry_density*(heat_cap_wood+(sapwood_g_watercontent*heat_cap_sap)))/
   (density_water*heat_cap_sap)
-sf_dense_inner <- (DMA_inner*sapwood_dry_density*(heat_cap_wood+(sapwood_g_watercontent*heat_cap_sap)))/
+sf_dense_inner <- (as.numeric(DMA_inner[[1]])*sapwood_dry_density*(heat_cap_wood+(sapwood_g_watercontent*heat_cap_sap)))/
   (density_water*heat_cap_sap)
 
 # Sap Flow Total
@@ -134,7 +131,7 @@ dat$sf_tot  <- ((sf_dense_outer*sapwood_area_outer)+(sf_dense_inner*sapwood_area
 ggplot(dat, aes(x = Time, y = sf_tot)) + geom_line(alpha = 0.5) +
   theme_bw() + labs(x = "", y = "Total Sap Flow [l/h]", title = parameters$Tree[1]) +
   geom_hline(yintercept = 0, linetype = "dashed")
-ggsave("plots/Sapflow.png", units = "cm", dpi = 300,
+ggsave(paste0("plots/",p$Tree,"_Sapflow.png"), units = "cm", dpi = 300,
        width = 10, height = 10)
 
 
