@@ -37,16 +37,22 @@ peclet_inner           <- 0.9696*Tmax_inner-3.2363
 
 
 # Heat Velocity Calculations
-HRM_outer <- (((2*therm_diffusivity)/(n_dist_d_outer+n_dist_u_outer))*dat$SF.01.AlphaOuter...+
+HRM_outer <- (((2*therm_diffusivity)/(n_dist_d_outer+n_dist_u_outer))*dat[,3]+
                 ((n_dist_d_outer-n_dist_u_outer)/(2*58.5)))*wound_correction*3600
-HRM_inner <- (((2*therm_diffusivity)/(n_dist_d_inner+n_dist_u_inner))*dat$SF.01.AlphaInner...+
+HRM_inner <- (((2*therm_diffusivity)/(n_dist_d_inner+n_dist_u_inner))*dat[,2]+
                 ((n_dist_d_inner-n_dist_u_inner)/(2*58.5)))*wound_correction*3600 
-TMx_outer <- ((sqrt(((4*therm_diffusivity)/3)*(log(1-(3/dat$SF.01.tMaxTouter..s.)))+
-                      ((n_dist_d_outer^2)/(dat$SF.01.tMaxTouter..s.*(dat$SF.01.tMaxTouter..s.-3)))))*3600)*wound_correction
-TMx_inner <- ((sqrt(((4*therm_diffusivity)/3)*(log(1-(3/dat$SF.01.tMaxTinner..s.)))+
-                      ((n_dist_d_inner^2)/(dat$SF.01.tMaxTinner..s.*(dat$SF.01.tMaxTinner..s.-3)))))*3600)*wound_correction
-DMA_outer <- ifelse(dat$SF.01.tMaxTouter..s. < 0.9*peclet_outer, dat$SF.01.tMaxTouter..s., HRM_outer)
-DMA_inner <- ifelse(dat$SF.01.tMaxTinner..s. < 0.9*peclet_inner, dat$SF.01.tMaxTinner..s., HRM_inner)
+TMx_outer <- ((sqrt(((4*therm_diffusivity)/3)*(log(1-(3/dat[,22])))+
+                      ((n_dist_d_outer^2)/(dat[,22]*(dat[,22]-3)))))*3600)*wound_correction
+TMx_inner <- ((sqrt(((4*therm_diffusivity)/3)*(log(1-(3/dat[,21])))+
+                      ((n_dist_d_inner^2)/(dat[,21]*(dat[,21]-3)))))*3600)*wound_correction
+
+DMA_outer <- c()
+DMA_inner <- c()
+for(i in 1:length(HRM_outer)){
+  DMA_outer[i] <- ifelse(dat[i,22] < 0.9*peclet_outer, dat[i,22], HRM_outer[i])
+  DMA_inner[i] <- ifelse(dat[i,21] < 0.9*peclet_inner, dat[i,21], HRM_inner[i])
+}
+
 
 # Check probe misalignment
 mis_df <- data.frame(
@@ -54,6 +60,8 @@ mis_df <- data.frame(
   DMA_outer = DMA_outer,
   DMA_inner = DMA_inner
 )
+names(mis_df)[2:3] <- c("DMA_outer", "DMA_inner")
+
 mis_df <- pivot_longer(mis_df, cols = 2:3, names_to = "position", values_to = "value")
 
 print(ggplot(mis_df, aes(x = time, y = value, color = position)) +
